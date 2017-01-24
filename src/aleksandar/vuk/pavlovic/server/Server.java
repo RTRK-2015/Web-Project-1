@@ -1,4 +1,4 @@
-package aleksandar.vuk.pavlovic.mailserver;
+package aleksandar.vuk.pavlovic.server;
 
 
 import java.io.IOException;
@@ -8,11 +8,10 @@ import java.net.Socket;
 
 public class Server
 {
-	public static final int PORT = 9000;
-
-
 	public static void main(String[] args)
 	{
+		final int PORT = 9000;
+		
 		try (ServerSocket ss = new ServerSocket(PORT))
 		{
 			while (true)

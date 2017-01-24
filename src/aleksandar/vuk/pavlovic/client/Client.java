@@ -100,6 +100,9 @@ public class Client
 	}
 
 
+	/**
+	 * Prints the menu on the screen.
+	 */
 	private static void printMenu()
 	{
 		System.out.println("0. Exit");
@@ -113,6 +116,11 @@ public class Client
 	}
 
 
+	/**
+	 * Gets the user name from the scanner and tries to register it on the server.
+	 * @param scanner Scanner to use for getting the user name.
+	 * @throws IOException if scanner input throws.
+	 */
 	private static void register(Scanner scanner) throws IOException
 	{
 		System.out.print("Name: ");
@@ -122,16 +130,16 @@ public class Client
 		requestMap.put("command", "REGISTER");
 		requestMap.put("userName", userName);
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
 		while (!reader.ready())
 			;
-		String response = reader.readLine();
+		final String response = reader.readLine();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
+		final Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
 
 		if ((boolean) responseMap.get("success"))
 			System.out.println("Successfully registered");
@@ -140,6 +148,11 @@ public class Client
 	}
 
 
+	/**
+	 * Gets the user name from the scanner and tries to login with it on the server.
+	 * @param scanner Scanner to use for getting the user name.
+	 * @throws IOException if scanner input throws.
+	 */
 	private static void login(Scanner scanner) throws IOException
 	{
 		System.out.print("Name: ");
@@ -149,16 +162,16 @@ public class Client
 		requestMap.put("command", "LOGIN");
 		requestMap.put("userName", userName);
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
 		while (!reader.ready())
 			;
-		String response = reader.readLine();
+		final String response = reader.readLine();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
+		final Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
 
 		if ((boolean) responseMap.get("success"))
 		{
@@ -172,12 +185,15 @@ public class Client
 	}
 
 
+	/**
+	 * Sends the log off command to the server.
+	 */
 	private static void logoff()
 	{
 		Map<String, String> requestMap = new HashMap<>();
 		requestMap.put("command", "LOGOFF");
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
@@ -185,26 +201,30 @@ public class Client
 	}
 
 
+	/**
+	 * Gets the list of mail snippets for the current user from the server.
+	 * @throws IOException if reading server response throws.
+	 */
 	private static void list() throws IOException
 	{
 		Map<String, String> requestMap = new HashMap<>();
 		requestMap.put("command", "LIST");
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
 		while (!reader.ready())
 			;
-		String response = reader.readLine();
+		final String response = reader.readLine();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
+		final Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
 
 		if ((boolean) responseMap.get("success"))
 		{
 			@SuppressWarnings("unchecked")
-			Collection<String> snippetsJSON = (Collection<String>) responseMap.get("mails");
+			final Collection<String> snippetsJSON = (Collection<String>) responseMap.get("mails");
 			for (String snippetJSON : snippetsJSON)
 				System.out.println(new Gson().fromJson(snippetJSON, MailSnippet.class));
 		}
@@ -215,31 +235,36 @@ public class Client
 	}
 
 
+	/**
+	 * Gets the mail with the user-supplied id from the server.
+	 * @param scanner Scanner to use for getting the mail id.
+	 * @throws IOException if reading server response throws.
+	 */
 	private static void receive(Scanner scanner) throws IOException
 	{
 		System.out.print("Id: ");
-		Integer id = scanner.nextInt();
+		final Integer id = scanner.nextInt();
 		scanner.nextLine();
 
 		Map<String, Object> requestMap = new HashMap<>();
 		requestMap.put("command", "RECEIVE");
 		requestMap.put("id", id);
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
 		while (!reader.ready())
 			;
-		String response = reader.readLine();
+		final String response = reader.readLine();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
+		final Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
 
 		if ((boolean) responseMap.get("success"))
 		{
-			String mailJSON = (String)responseMap.get("mail");
-			MailFromServer mail = (MailFromServer)new Gson().fromJson(mailJSON, MailFromServer.class);
+			final String mailJSON = (String)responseMap.get("mail");
+			final MailFromServer mail = (MailFromServer)new Gson().fromJson(mailJSON, MailFromServer.class);
 			
 			System.out.println(mail);
 		}
@@ -250,34 +275,39 @@ public class Client
 	}
 
 
+	/**
+	 * Reads the user-supplied mail information and requests that server send it.
+	 * @param scanner Scanner to use for getting the mail data.
+	 * @throws IOException if reading server response throws.
+	 */
 	private static void send(Scanner scanner) throws IOException
 	{
 		System.out.print("To: ");
-		String to = scanner.nextLine();
+		final String to = scanner.nextLine();
 
 		System.out.print("Subject: ");
-		String subject = scanner.nextLine();
+		final String subject = scanner.nextLine();
 
 		System.out.print("Body: ");
-		String body = scanner.nextLine();
+		final String body = scanner.nextLine();
 
 		MailToServer mail = new MailToServer(userName, to, subject, body);
-		String mailJSON = new Gson().toJson(mail, MailToServer.class);
+		final String mailJSON = new Gson().toJson(mail, MailToServer.class);
 		
 		Map<String, Object> requestMap = new HashMap<>();
 		requestMap.put("command", "SEND");
 		requestMap.put("mail", mailJSON);
 
-		String request = new Gson().toJson(requestMap, Map.class);
+		final String request = new Gson().toJson(requestMap, Map.class);
 		writer.println(request);
 		writer.flush();
 
 		while (!reader.ready())
 			;
-		String response = reader.readLine();
+		final String response = reader.readLine();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
+		final Map<String, Object> responseMap = new Gson().fromJson(response, Map.class);
 
 		if ((boolean) responseMap.get("success"))
 		{

@@ -1,4 +1,4 @@
-package aleksandar.vuk.pavlovic.mailserver.dao;
+package aleksandar.vuk.pavlovic.server.dao;
 
 
 import java.sql.Connection;
@@ -10,24 +10,46 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import aleksandar.vuk.pavlovic.mailserver.model.User;
+import aleksandar.vuk.pavlovic.model.User;
 
 
+/**
+ * A singleton class used for accessing the user information.
+ */
 public class UserDAO
 {
+	/**
+	 * Gets the user data access object instance.
+	 */
 	public static UserDAO getInstance()
 	{
 		synchronized (lock)
 		{
 			if (instance == null)
-				instance = new UserDAO();
+			{
+				try
+				{
+					instance = new UserDAO();
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}
 
 			return instance;
 		}
 	}
 
 
-	public boolean existsUser(String name)
+	/**
+	 * Checks whether the user with the specified name exists.
+	 * @param name The name of the user.
+	 * @return true, if the user exists.
+	 * @throws Exception if accessing data throws.
+	 */
+	public boolean existsUser(String name) throws Exception
 	{
 		try (Connection connection = SQLite.createConnection();
 				PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM Users WHERE name = ?;");)
@@ -41,59 +63,63 @@ public class UserDAO
 				return rs.getInt(1) != 0;
 			}
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-
-			return false;
-		}
 	}
 
 
-	public Collection<User> getUsers()
+	/**
+	 * Retrieves all registered users.
+	 * @return List of registered users.
+	 * @throws Exception if accessing data throws.
+	 */
+	public Collection<User> getUsers() throws Exception
 	{
+		ArrayList<User> list = new ArrayList<>();
+		
 		try (Connection connection = SQLite.createConnection();
 				Statement stmt = connection.createStatement();
 				ResultSet rs = stmt.executeQuery("SELECT * FROM Users;");)
 		{
-			ArrayList<User> list = new ArrayList<>();
-
 			while (rs.next())
 			{
-				String name = rs.getString("name"); // absolutely disgusting
+				final String name = rs.getString("name"); // absolutely disgusting
 				list.add(new User(name));
 			}
-
-			return list;
 		}
-		catch (SQLException e)
-		{
-			return new ArrayList<>();
-		}
+		
+		return list;
 	}
 
 
-	public boolean addUser(User user)
+	/**
+	 * Tries to register a new user.
+	 * @param user User to register.
+	 * @return true if the user was successfully registered.
+	 * @throws Exception if accessing data throws.
+	 */
+	public boolean addUser(User user) throws Exception
 	{
 		try (Connection connection = SQLite.createConnection();
 				PreparedStatement stmt = connection.prepareStatement("INSERT INTO Users (name) VALUES (?);");)
 		{
 			stmt.setString(1, user.name);
 			stmt.executeUpdate();
+			return true;
 		}
 		catch (SQLException e)
 		{
-			if (e.getErrorCode() == SQLite.PRIMARY_KEY_FAILED)
+			if (e.getErrorCode() != SQLite.PRIMARY_KEY_FAILED)
 				return false;
 			else
-				e.printStackTrace();
-		}
-
-		return true;
+				throw e;
+		}	
 	}
 
 
-	private UserDAO()
+	/**
+	 * Constructs the singleton instance.
+	 * @throws Exception if construction of data access object fails.
+	 */
+	private UserDAO() throws Exception
 	{
 		try (Connection connection = SQLite.createConnection();)
 		{
@@ -107,10 +133,6 @@ public class UserDAO
 					stmt.execute("CREATE TABLE Users(name TEXT PRIMARY KEY);");
 				}
 			}
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
 		}
 	}
 

@@ -1,11 +1,10 @@
-package aleksandar.vuk.pavlovic.mailserver.dao;
+package aleksandar.vuk.pavlovic.server.dao;
 
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,67 +14,91 @@ import aleksandar.vuk.pavlovic.model.MailFromServer;
 import aleksandar.vuk.pavlovic.model.MailSnippet;
 
 
+/**
+ * A singleton class used for accessing the mail information.
+ */
 public class MailDAO
 {
+	/**
+	 * Gets the mail data access object instance.
+	 */
 	public static MailDAO getInstance()
 	{
 		synchronized (lock)
 		{
 			if (instance == null)
-				instance = new MailDAO();
+			{
+				try
+				{
+					instance = new MailDAO();
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}
 
 			return instance;
 		}
 	}
 
 
-	public Collection<MailSnippet> getSnippetsTo(String to)
+	/**
+	 * Gets mail snippets indended for the specified user.
+	 * @param to The recipient of the mails.
+	 * @return List of snippets.
+	 * @throws Exception if accessing data throws.
+	 */
+	public Collection<MailSnippet> getSnippetsTo(String to) throws Exception
 	{
+		ArrayList<MailSnippet> list = new ArrayList<>();
+		
 		try (Connection connection = SQLite.createConnection();
-				PreparedStatement stmt = connection.prepareStatement("SELECT from_, subject, id FROM Mails WHERE to_ = ?;");)
+				PreparedStatement stmt = connection
+						.prepareStatement("SELECT from_, subject, id FROM Mails WHERE to_ = ?;");)
 		{
 			stmt.setString(1, to);
 
 			try (ResultSet rs = stmt.executeQuery())
 			{
-				ArrayList<MailSnippet> list = new ArrayList<>();
-
 				while (rs.next())
 				{
-					String from = rs.getString("from_"); // absolutely disgusting
-					String subject = rs.getString("subject"); // absolutely
-																// disgusting
-					int id = rs.getInt("id"); // absolutely disgusting
+					final String from = rs.getString("from_");
+					final String subject = rs.getString("subject");
+					final int id = rs.getInt("id");
 					list.add(new MailSnippet(from, subject, id));
-				}
-
-				return list;
+				}		
 			}
 		}
-		catch (SQLException e)
-		{
-			return new ArrayList<>();
-		}
+		
+		return list;
 	}
-	
-	
-	public MailFromServer getMail(String to, int id)
+
+
+	/**
+	 * Gets the mail with the specified id for the specified user.
+	 * @param to The recipient of the mails.
+	 * @param id The id (ordinal number) of the mail.
+	 * @return The desired mail, or null if it cannot be found.
+	 * @throws Exception if accessing data throws.
+	 */
+	public MailFromServer getMail(String to, int id) throws Exception
 	{
-		try
-		(Connection connection = SQLite.createConnection();
-		PreparedStatement stmt = connection.prepareStatement("SELECT * FROM Mails WHERE to_ = ? AND id = ?;");)
+		try (Connection connection = SQLite.createConnection();
+				PreparedStatement stmt = connection.prepareStatement("SELECT * FROM Mails WHERE to_ = ? AND id = ?;");)
 		{
 			stmt.setString(1, to);
 			stmt.setInt(2, id);
-			
+
 			try (ResultSet rs = stmt.executeQuery())
 			{
 				if (rs.next())
 				{
-					String from = rs.getString("from_");
-					String subject = rs.getString("subject");
-					String body = rs.getString("body");
-					
+					final String from = rs.getString("from_");
+					final String subject = rs.getString("subject");
+					final String body = rs.getString("body");
+
 					return new MailFromServer(from, to, subject, body, id);
 				}
 				else
@@ -84,24 +107,28 @@ public class MailDAO
 				}
 			}
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-			return null;
-		}
 	}
 
 
-	public boolean addMail(MailToServer mail)
+	/**
+	 * Sends mail to the user specified in the mail itself.
+	 * @param mail Mail to send
+	 * @return true, if the mail was successfully sent.
+	 * @throws Exception if accessing data throws.
+	 */
+	public boolean addMail(MailToServer mail) throws Exception
 	{
+		if (!UserDAO.getInstance().existsUser(mail.to))
+			return false;
+
 		try (Connection connection = SQLite.createConnection();)
 		{
 			int count;
-			
+
 			try (PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM Mails WHERE to_ = ?;");)
 			{
 				stmt.setString(1, mail.to);
-				
+
 				try (ResultSet rs = stmt.executeQuery();)
 				{
 					rs.next();
@@ -120,16 +147,16 @@ public class MailDAO
 				stmt.executeUpdate();
 			}
 		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
 
 		return true;
 	}
 
 
-	private MailDAO()
+	/**
+	 * Constructs the {@link MailDAO} singleton instance.
+	 * @throws Exception if creating the data access object fails.
+	 */
+	private MailDAO() throws Exception
 	{
 		try (Connection connection = SQLite.createConnection())
 		{
@@ -145,10 +172,6 @@ public class MailDAO
 							+ "FOREIGN KEY(to_) REFERENCES Users(name));");
 				}
 			}
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
 		}
 	}
 
